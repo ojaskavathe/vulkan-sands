@@ -15,6 +15,8 @@
 
 #include <fstream>		//for reading the shaders
 
+#include <glm/glm.hpp>
+
 #include <debugUtils.hpp>
 #include <wrappers.hpp>
 
@@ -143,7 +145,10 @@ void Engine::cleanUp()
 void Engine::recreateSwapchain() {
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(window, &width, &height);
-	while(width == 0 || height == 0) {
+	while((width == 0 || height == 0)) {
+		if (glfwWindowShouldClose(window)) {
+			return;
+		}
 		glfwGetFramebufferSize(window, &width, &height);
 		glfwWaitEvents();
 	}
