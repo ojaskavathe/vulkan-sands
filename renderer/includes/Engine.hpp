@@ -8,6 +8,7 @@
 // 	#define VULKAN_HPP_ASSERT_ON_RESULT
 // #endif
 
+#include <array>
 #include <vulkan/vulkan_raii.hpp>
 #include <GLFW/glfw3.h>
 #include <vector>
@@ -15,9 +16,10 @@
 #include <string>
 #include <filesystem>
 
+#include <glm/glm.hpp>
 
 const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+const uint32_t HEIGHT = 800;
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 #ifdef _DEBUG
@@ -29,6 +31,51 @@ const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 class Engine
 {
 private:
+
+	struct Vertex {
+		glm::vec2 pos;
+		glm::vec3 color;
+
+		static vk::VertexInputBindingDescription getBindingDescription() {
+			vk::VertexInputBindingDescription bindingDescription{
+				0,
+				sizeof(Vertex),
+				vk::VertexInputRate::eVertex
+			};
+
+			return bindingDescription;
+		}
+
+		static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescription() {
+			std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions;
+
+			attributeDescriptions[0].binding = 0;
+			attributeDescriptions[0].location = 0;
+			attributeDescriptions[0].offset = offsetof(Vertex, pos);
+			attributeDescriptions[0].format = vk::Format::eR32G32Sfloat;
+
+			attributeDescriptions[1].binding = 0;
+			attributeDescriptions[1].location = 1;
+			attributeDescriptions[1].offset = offsetof(Vertex, color);
+			attributeDescriptions[1].format = vk::Format::eR32G32B32Sfloat;
+
+			return attributeDescriptions;
+		}
+	};
+
+	const std::vector<Vertex> vertices = {
+		{{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}},
+		{{1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}},
+		{{1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+		{{-1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}}
+	};
+
+	const std::vector<uint16_t> indices = {
+		0, 1, 2, 2, 3, 0
+	};
+
+	const glm::vec2 grid_size = {4, 4};
+
 	GLFWwindow* window;
 	
 	vk::raii::Context context;
@@ -51,8 +98,9 @@ private:
 	vk::raii::Queue presentQueue = nullptr;
 
 	vk::raii::RenderPass renderPass = nullptr;
-	vk::raii::PipelineLayout pipelineLayout = nullptr;
 
+	vk::raii::DescriptorSetLayout descriptorSetLayout = nullptr;
+	vk::raii::PipelineLayout pipelineLayout = nullptr;
 	vk::raii::Pipeline graphicsPipeline = nullptr;
 
 	vk::raii::CommandPool commandPool = nullptr;
@@ -66,6 +114,16 @@ private:
 	vk::raii::DebugUtilsMessengerEXT debugUtilsMessenger = nullptr;
 
 	bool framebufferResized = false;
+
+	vk::raii::Buffer vertexBuffer = nullptr;
+	vk::raii::DeviceMemory vertexBufferMemory = nullptr;
+
+	vk::raii::Buffer indexBuffer = nullptr;
+	vk::raii::DeviceMemory indexBufferMemory = nullptr;
+
+	std::vector<vk::raii::Buffer> uniformBuffers;
+	std::vector<vk::raii::DeviceMemory> uniformBuffersMemory;
+	std::vector<void*> uniformBuffersMapped;
 
 	const std::vector<const char*> ValidationLayers = {
 		"VK_LAYER_KHRONOS_validation"
@@ -92,6 +150,10 @@ private:
 		std::vector<vk::PresentModeKHR> presentModes;
 	};
 
+	struct UniformBufferObject {
+		glm::vec2 grid_size;
+	};
+
 public:
 	Engine();
 	void run();
@@ -110,13 +172,25 @@ private:
 	void createSurface();
 	void createSwapchain();
 	void createRenderPass();
+	void createDescriptorSetLayout();
 	void createGraphicsPipeline();
 	void createFramebuffers();
 	void createCommandPool();
+	
+	void createVertexBuffer();
+	void createIndexBuffer();
+	void createUniformBuffers();
 	void createCommandBuffers();
+	
 	void createSyncObjects();
 
 	void drawFrame();
+	
+	std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> createBuffer(vk::DeviceSize _size, 
+					vk::BufferUsageFlags _usage,
+					vk::MemoryPropertyFlags _propertyFlags);
+	
+	void copyBuffer(vk::raii::Buffer& _src, vk::raii::Buffer& _dst, vk::DeviceSize _size);
 
 	void recordCommandBuffer(vk::raii::CommandBuffer& _commandBuffer, uint32_t _imageIndex);
 

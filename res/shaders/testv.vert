@@ -1,20 +1,20 @@
 #version 460
 
-layout(location = 0) out vec3 fragColor;
+layout(location = 0) in vec2 inPosition;
+layout(location = 1) in vec3 inColor; 
 
-vec2 positions[3] = vec2[](
-    vec2(0.0, -0.5),
-    vec2(0.5, 0.5),
-    vec2(-0.5, 0.5)
-);
+layout(location = 0) out vec3 outFragColor;
 
-vec3 colors[3] = vec3[](
-    vec3(1.0, 0.0, 0.0),
-    vec3(0.0, 1.0, 0.0),
-    vec3(0.0, 0.0, 1.0)
-);
+// layout(binding = 0) uniform UniformBufferObject {
+//     vec2 grid_size;
+// } ubo;
+
+vec2 grid = {4, 4};
 
 void main() {
-    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
-    fragColor = colors[gl_VertexIndex];
+
+    vec2 grid_pos = vec2(inPosition.x + 1, inPosition.y - 1) / grid;
+
+    gl_Position = vec4(grid_pos, 0.0, 1.0);
+    outFragColor = inColor;
 }
