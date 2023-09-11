@@ -78,7 +78,7 @@ private:
 		0, 1, 2, 2, 3, 0
 	};
 
-	const UniformBufferObject ubo = { glm::vec2(4, 4) };
+	const UniformBufferObject ubo = { glm::vec2(64) };
 
 	GLFWwindow* window;
 	
@@ -127,6 +127,9 @@ private:
 
 	vk::raii::Buffer uniformBuffer = nullptr;
 	vk::raii::DeviceMemory uniformBuffersMemory = nullptr;
+
+	vk::raii::DescriptorPool descriptorPool = nullptr;
+	vk::raii::DescriptorSet descriptorSet = nullptr;
 
 	const std::vector<const char*> ValidationLayers = {
 		"VK_LAYER_KHRONOS_validation"

@@ -58,14 +58,18 @@ void Engine::initVulkan()
 	createLogicalDevice();
 	createSwapchain();
 	createRenderPass();
+	createDescriptorSetLayout();
 	createGraphicsPipeline();
 	createFramebuffers();
 	createCommandPool();
 
 	createVertexBuffer();
 	createIndexBuffer();
+	createUniformBuffers();
 	createCommandBuffers();
-	
+	createDescriptorPool();
+	createDescriptorSet();
+
 	createSyncObjects();
 }
 
@@ -552,7 +556,7 @@ void Engine::createGraphicsPipeline()
 
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
 		vk::PipelineLayoutCreateFlags{},				//flags
-		nullptr,
+		*descriptorSetLayout,
 		nullptr
 	);
 	
@@ -726,6 +730,31 @@ void Engine::createUniformBuffers()
 	memcpy(uniformBufferMapped, &ubo, bufferSize);
 }
 
+void Engine::createDescriptorPool()
+{
+	auto poolSize = vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1);
+	vk::DescriptorPoolCreateInfo poolInfo(
+		vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+		1,
+		poolSize
+	);
+	descriptorPool = vk::raii::DescriptorPool(device, poolInfo);
+}
+
+void Engine::createDescriptorSet()
+{
+	auto allocInfo = vk::DescriptorSetAllocateInfo(*descriptorPool, *descriptorSetLayout);
+
+	vk::raii::DescriptorSets descriptorSets(device, allocInfo);
+	descriptorSet = vk::raii::DescriptorSet( std::move(descriptorSets.front()) );
+	
+	vk::DescriptorBufferInfo bufferInfo(*uniformBuffer, 0, sizeof(UniformBufferObject));
+
+	vk::WriteDescriptorSet descriptorWrite(*descriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, bufferInfo, nullptr, nullptr);
+
+	device.updateDescriptorSets(descriptorWrite, nullptr);
+}
+
 void Engine::createCommandBuffers()
 {
 	commandBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -797,8 +826,9 @@ void Engine::recordCommandBuffer(vk::raii::CommandBuffer& _commandBuffer, uint32
 	};
 	_commandBuffer.setScissor(0, scissor);
 	
-	_commandBuffer.draw(vertices.size(), 1, 0, 0);
-	_commandBuffer.drawIndexed(indices.size(), 1, 0, 0, 0);
+	_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipelineLayout, 0, *descriptorSet, nullptr);
+
+	_commandBuffer.drawIndexed(indices.size(), ubo.grid_size.x * ubo.grid_size.y, 0, 0, 0);
 
 	_commandBuffer.endRenderPass();
 
