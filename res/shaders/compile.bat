@@ -1,2 +1,0 @@
-C:/VulkanSDK/1.3.231.1/Bin/glslc.exe C:/dev/vulkan-sands/res/shaders/testv.vert -o C:/dev/vulkan-sands/res/shaders/testv.spv
-C:/VulkanSDK/1.3.231.1/Bin/glslc.exe C:/dev/vulkan-sands/res/shaders/testf.frag -o C:/dev/vulkan-sands/res/shaders/testf.spv

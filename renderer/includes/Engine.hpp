@@ -63,6 +63,10 @@ private:
 		}
 	};
 
+	struct UniformBufferObject {
+		glm::vec2 grid_size;
+	};
+
 	const std::vector<Vertex> vertices = {
 		{{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}},
 		{{1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}},
@@ -74,7 +78,7 @@ private:
 		0, 1, 2, 2, 3, 0
 	};
 
-	const glm::vec2 grid_size = {4, 4};
+	const UniformBufferObject ubo = { glm::vec2(4, 4) };
 
 	GLFWwindow* window;
 	
@@ -121,9 +125,8 @@ private:
 	vk::raii::Buffer indexBuffer = nullptr;
 	vk::raii::DeviceMemory indexBufferMemory = nullptr;
 
-	std::vector<vk::raii::Buffer> uniformBuffers;
-	std::vector<vk::raii::DeviceMemory> uniformBuffersMemory;
-	std::vector<void*> uniformBuffersMapped;
+	vk::raii::Buffer uniformBuffer = nullptr;
+	vk::raii::DeviceMemory uniformBuffersMemory = nullptr;
 
 	const std::vector<const char*> ValidationLayers = {
 		"VK_LAYER_KHRONOS_validation"
@@ -148,10 +151,6 @@ private:
 		vk::SurfaceCapabilitiesKHR capabilities;
 		std::vector<vk::SurfaceFormatKHR> formats;
 		std::vector<vk::PresentModeKHR> presentModes;
-	};
-
-	struct UniformBufferObject {
-		glm::vec2 grid_size;
 	};
 
 public:
@@ -181,7 +180,9 @@ private:
 	void createIndexBuffer();
 	void createUniformBuffers();
 	void createCommandBuffers();
-	
+	void createDescriptorPool();
+	void createDescriptorSet();
+
 	void createSyncObjects();
 
 	void drawFrame();

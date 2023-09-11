@@ -617,7 +617,7 @@ void Engine::createCommandPool()
 }
 
 // std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> Engine::createBuffer(
-auto Engine::createBuffer(
+[[nodiscard]] auto Engine::createBuffer(
 	vk::DeviceSize _size, 
 	vk::BufferUsageFlags _usage, 
 	vk::MemoryPropertyFlags _propertyFlags
@@ -714,6 +714,18 @@ void Engine::createIndexBuffer()
 	copyBuffer(stagingBuffer, indexBuffer, bufferSize);
 }
 
+void Engine::createUniformBuffers()
+{
+	vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
+
+	std::tie(uniformBuffer, uniformBuffersMemory) = createBuffer(bufferSize, 
+		vk::BufferUsageFlagBits::eUniformBuffer, 
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+	
+	void* uniformBufferMapped = uniformBuffersMemory.mapMemory(0, bufferSize);
+	memcpy(uniformBufferMapped, &ubo, bufferSize);
+}
+
 void Engine::createCommandBuffers()
 {
 	commandBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -724,15 +736,6 @@ void Engine::createCommandBuffers()
 	};
 
 	commandBuffers = vk::raii::CommandBuffers(device, commandBufferAllocateInfo);
-}
-
-void Engine::createUniformBuffers()
-{
-	vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
-
-	uniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
-	uniformBuffersMemory.reserve(MAX_FRAMES_IN_FLIGHT);
-	uniformBuffersMapped.reserve(MAX_FRAMES_IN_FLIGHT);
 }
 
 void Engine::createSyncObjects()
