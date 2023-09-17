@@ -28,6 +28,9 @@ const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 	const bool enableValidationLayers = false;
 #endif // If in release mode, no validation layers are to be used.
 
+#define GRID_SIZE_X 32
+#define GRID_SIZE_Y 32
+
 class Engine
 {
 private:
@@ -63,8 +66,16 @@ private:
 		}
 	};
 
+	struct Cell {
+		alignas(16) uint32_t value;
+	};
+
 	struct UniformBufferObject {
 		glm::vec2 grid_size;
+	};
+
+	struct StorageBufferObject {
+		std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y> cell_state;
 	};
 
 	const std::vector<Vertex> vertices = {
@@ -78,10 +89,15 @@ private:
 		0, 1, 2, 2, 3, 0
 	};
 
-	const UniformBufferObject ubo = { glm::vec2(64) };
+	const UniformBufferObject ubo = { glm::vec2(GRID_SIZE_X, GRID_SIZE_Y) };
+
+	std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y> cell_state_in = {};
+	StorageBufferObject ssbo = {cell_state_in};
 
 	GLFWwindow* window;
-	
+
+	float delta_time = 0.0f;
+
 	vk::raii::Context context;
 	
 	vk::raii::Instance instance = nullptr;
@@ -127,6 +143,10 @@ private:
 
 	vk::raii::Buffer uniformBuffer = nullptr;
 	vk::raii::DeviceMemory uniformBuffersMemory = nullptr;
+
+	vk::raii::Buffer storageBuffer = nullptr;
+	vk::raii::DeviceMemory storageBufferMemory = nullptr;
+	void* storageBufferWriteLoc = nullptr;
 
 	vk::raii::DescriptorPool descriptorPool = nullptr;
 	vk::raii::DescriptorSet descriptorSet = nullptr;
@@ -182,6 +202,7 @@ private:
 	void createVertexBuffer();
 	void createIndexBuffer();
 	void createUniformBuffers();
+	void createStorageBuffer();
 	void createCommandBuffers();
 	void createDescriptorPool();
 	void createDescriptorSet();
@@ -189,6 +210,8 @@ private:
 	void createSyncObjects();
 
 	void drawFrame();
+
+	void updateCells();
 	
 	std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> createBuffer(vk::DeviceSize _size, 
 					vk::BufferUsageFlags _usage,

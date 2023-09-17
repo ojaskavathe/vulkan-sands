@@ -9,17 +9,28 @@ layout(binding = 0) uniform UniformBufferObject {
     vec2 grid_size;
 } ubo;
 
+struct Cell {
+    uint value;
+};
+
+layout(std140, binding = 1) readonly buffer StorageBufferObject {
+    Cell cell_state[];
+} ssbo;
+
 void main() {
 
-    // vec2 pos = vec2(1, 1)
-    int i = gl_InstanceIndex; 
-    vec2 pos = vec2(i, i);
-    pos = pos / ubo.grid_size * 2;
+    int i = gl_InstanceIndex;
+    vec2 cell_pos = vec2(i % uint(ubo.grid_size.x), floor(i / uint(ubo.grid_size.y)));
+
+    cell_pos = cell_pos / ubo.grid_size * 2;
+    // cell_pos *= ssbo.cell_state[i].value;
 
     vec2 grid_pos = vec2(inPosition.x + 1, inPosition.y - 1) / ubo.grid_size;
     grid_pos = vec2(grid_pos.x - 1, grid_pos.y + 1);
-    grid_pos = vec2(grid_pos.x + pos.x, grid_pos.y - pos.y);
+    grid_pos = vec2(grid_pos.x + cell_pos.x, grid_pos.y - cell_pos.y);
 
     gl_Position = vec4(grid_pos, 0.0, 1.0);
-    outFragColor = inColor;
+
+    vec3 color = vec3(ssbo.cell_state[i].value);
+    outFragColor = vec3(color);
 }

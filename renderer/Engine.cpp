@@ -10,6 +10,9 @@
 #include <map>			// std::multimap
 #include <set>			// std::set doesn't allow duplicates
 
+#include <thread>
+#include <chrono>
+
 #include <limits>		// std::numeric_limits
 #include <algorithm>	// std::clamp
 
@@ -24,6 +27,17 @@ Engine::Engine()
 {
 	initWindow();
 	initVulkan();
+
+	// initial cell state pls move this somewhere else ffs
+	for (int y = 0; y < GRID_SIZE_Y; ++y) {
+		ssbo.cell_state[y * GRID_SIZE_X + GRID_SIZE_X / 2].value = 1;
+	}
+
+	// for (int y = 0; y < GRID_SIZE_X; ++y) {
+	// 	for (int x = 0; x < GRID_SIZE_Y; ++x) {
+	// 		ssbo.cell_state[GRID_SIZE_X * y + x].value = 0;
+	// 	}
+	// }
 }
 
 void Engine::run()
@@ -66,6 +80,7 @@ void Engine::initVulkan()
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
+	createStorageBuffer();
 	createCommandBuffers();
 	createDescriptorPool();
 	createDescriptorSet();
@@ -75,12 +90,26 @@ void Engine::initVulkan()
 
 void Engine::mainLoop()
 {
+	auto start_time = std::chrono::high_resolution_clock::now();
 	while (!glfwWindowShouldClose(window))
 	{
+		auto now = std::chrono::high_resolution_clock::now();
+		auto delta = now - start_time;
+		// delta_time = delta.count();
+		// previous_time = start_time;
+		auto end = now + std::chrono::milliseconds(64);
+
+		// if (delta >= std::chrono::seconds(1)) {
+		// 	start_time = now;
+		// }
+
+		updateCells();
 		glfwPollEvents();
 		drawFrame();
+
+		std::this_thread::sleep_until(end);
 	}
-	
+
 	device.waitIdle();
 }
 
@@ -89,9 +118,6 @@ void Engine::drawFrame()
 	// the * operator on vk::raii::<something> returns vk::<something> & (remember it's a reference)
 	while (device.waitForFences(*inFlightFences[currentFrame], VK_TRUE, UINT32_MAX) == vk::Result::eTimeout)
 		;
-
-	// vk::Result result;
-	// uint32_t imageIndex;
 
 	auto [result, imageIndex] = SwapchainNextImageWrapper(swapchain, UINT64_MAX, *imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE);
 
@@ -426,11 +452,17 @@ void Engine::createRenderPass()
 void Engine::createDescriptorSetLayout() {
 
 	vk::DescriptorSetLayoutBinding uboLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
+	vk::DescriptorSetLayoutBinding ssboLayoutBinding(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eVertex);
+
+	std::vector<vk::DescriptorSetLayoutBinding> layoutBindings = {
+		uboLayoutBinding,
+		ssboLayoutBinding
+	};
 
 	descriptorSetLayout = vk::raii::DescriptorSetLayout(
 		device, vk::DescriptorSetLayoutCreateInfo(
 			vk::DescriptorSetLayoutCreateFlags{},
-			uboLayoutBinding
+			layoutBindings
 		)
 	);
 }
@@ -620,7 +652,6 @@ void Engine::createCommandPool()
 	commandPool = vk::raii::CommandPool(device, commandPoolCreateInfo);
 }
 
-// std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> Engine::createBuffer(
 [[nodiscard]] auto Engine::createBuffer(
 	vk::DeviceSize _size, 
 	vk::BufferUsageFlags _usage, 
@@ -730,13 +761,70 @@ void Engine::createUniformBuffers()
 	memcpy(uniformBufferMapped, &ubo, bufferSize);
 }
 
+void Engine::createStorageBuffer()
+{
+	vk::DeviceSize bufferSize = sizeof(StorageBufferObject);
+
+	std::tie(storageBuffer, storageBufferMemory) = createBuffer(bufferSize, 
+		vk::BufferUsageFlagBits::eStorageBuffer, 
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+	
+	storageBufferWriteLoc = storageBufferMemory.mapMemory(0, bufferSize);
+
+	memcpy(storageBufferWriteLoc, &ssbo, bufferSize);
+}
+
+void Engine::updateCells()
+{
+	vk::DeviceSize bufferSize = sizeof(StorageBufferObject);
+
+	for(uint32_t y = 0; y < GRID_SIZE_Y; ++y) {
+		for(uint32_t x = 0; x < GRID_SIZE_X; ++x) {
+			
+			if (y == 0) {
+				continue;
+			}
+
+			if (ssbo.cell_state[y * GRID_SIZE_X + x].value == 1) {
+
+				// cell below is empty
+				if (ssbo.cell_state[(y - 1) * GRID_SIZE_X + x].value == 0) {
+					ssbo.cell_state[(y - 1) * GRID_SIZE_X + x].value = 1;
+					ssbo.cell_state[y * GRID_SIZE_X + x].value = 0;
+				}
+				else if (x != 0 && x != GRID_SIZE_X - 1) {
+					// cell below is filled
+					if (ssbo.cell_state[(y - 1) * GRID_SIZE_X + x - 1].value == 0) {
+						ssbo.cell_state[(y - 1) * GRID_SIZE_X + x - 1].value = 1;
+						ssbo.cell_state[y * GRID_SIZE_X + x].value = 0;
+					}
+					// cell to the left is filled
+					else if (ssbo.cell_state[(y - 1) * GRID_SIZE_X + x + 1].value == 0) {
+						ssbo.cell_state[(y - 1) * GRID_SIZE_X + x + 1].value = 1;
+						ssbo.cell_state[y * GRID_SIZE_X + x].value = 0;
+					}
+
+				}
+			}
+
+		}
+	}
+	
+	memcpy(storageBufferWriteLoc, &ssbo, bufferSize);
+	cell_state_in = ssbo.cell_state;
+}
+
 void Engine::createDescriptorPool()
 {
-	auto poolSize = vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1);
+	auto poolSizes = std::vector<vk::DescriptorPoolSize> {
+		vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1),
+		vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 1),
+	};
+
 	vk::DescriptorPoolCreateInfo poolInfo(
 		vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
 		1,
-		poolSize
+		poolSizes
 	);
 	descriptorPool = vk::raii::DescriptorPool(device, poolInfo);
 }
@@ -748,10 +836,13 @@ void Engine::createDescriptorSet()
 	vk::raii::DescriptorSets descriptorSets(device, allocInfo);
 	descriptorSet = vk::raii::DescriptorSet( std::move(descriptorSets.front()) );
 	
-	vk::DescriptorBufferInfo bufferInfo(*uniformBuffer, 0, sizeof(UniformBufferObject));
+	vk::DescriptorBufferInfo uniformBufferInfo(*uniformBuffer, 0, sizeof(UniformBufferObject));
+	vk::DescriptorBufferInfo storageBufferInfo(*storageBuffer, 0, sizeof(StorageBufferObject));
 
-	vk::WriteDescriptorSet descriptorWrite(*descriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, bufferInfo, nullptr, nullptr);
+	vk::WriteDescriptorSet descriptorWrite(*descriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, uniformBufferInfo, nullptr, nullptr);
+	device.updateDescriptorSets(descriptorWrite, nullptr);
 
+	descriptorWrite = vk::WriteDescriptorSet(*descriptorSet, 1, 0, vk::DescriptorType::eStorageBuffer, nullptr, storageBufferInfo, nullptr, nullptr);
 	device.updateDescriptorSets(descriptorWrite, nullptr);
 }
 
@@ -827,6 +918,8 @@ void Engine::recordCommandBuffer(vk::raii::CommandBuffer& _commandBuffer, uint32
 	_commandBuffer.setScissor(0, scissor);
 	
 	_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipelineLayout, 0, *descriptorSet, nullptr);
+
+	updateCells();
 
 	_commandBuffer.drawIndexed(indices.size(), ubo.grid_size.x * ubo.grid_size.y, 0, 0, 0);
 
