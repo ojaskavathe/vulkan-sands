@@ -1,5 +1,9 @@
 add_library(
     sim STATIC
-    sim.cpp sim.hpp
+    sim.cpp includes/sim.hpp
 )
-target_link_libraries(engine PRIVATE sim)
+
+target_include_directories(sim 
+    PUBLIC includes
+    PUBLIC ${CMAKE_SOURCE_DIR}/engine/config
+)

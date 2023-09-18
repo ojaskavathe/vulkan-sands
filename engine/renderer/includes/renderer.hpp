@@ -18,28 +18,13 @@
 
 #include <glm/glm.hpp>
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 800;
-const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+#include <config.hpp>
 
 #ifdef _DEBUG
 	const bool enableValidationLayers = true;
 #else
 	const bool enableValidationLayers = false;
 #endif // If in release mode, no validation layers are to be used.
-
-#define GRID_SIZE_X 128
-#define GRID_SIZE_Y 128
-
-#define MIN_FRAME_TIME 16
-
-struct Cell {
-	alignas(16) uint32_t value;
-};
-
-struct StorageBufferObject {
-	std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y> cell_state;
-};
 
 class Renderer
 {
@@ -73,6 +58,10 @@ private:
 
 	struct UniformBufferObject {
 		glm::vec2 grid_size;
+	};
+
+	struct StorageBufferObject {
+		grid cell_state;
 	};
 
 	const std::vector<Vertex> vertices = {
@@ -178,7 +167,7 @@ public:
 	Renderer();
 	void run();
 
-	void setCellUpdate(void(std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&));
+	void setCellUpdate(void(grid&));
 
 private:
 	void initWindow();

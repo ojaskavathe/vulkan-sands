@@ -1,13 +1,17 @@
 project(engine)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/renderer)
-
 add_library(
     engine STATIC
-    engine.cpp # includes/engine.hpp
+    engine.cpp
 )
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/renderer)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/sim)
+
 target_link_libraries(engine PUBLIC renderer)
+target_link_libraries(engine PUBLIC sim)
 
 target_include_directories(engine
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/includes
+    PUBLIC ${CMAKE_SOURCE_DIR}/engine/config
 )

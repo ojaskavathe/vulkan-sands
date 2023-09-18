@@ -31,9 +31,9 @@ Renderer::Renderer()
 
 	// initial cell state pls move this somewhere else ffs
 	for (int y = 0; y < GRID_SIZE_Y; ++y) {
-		ssbo.cell_state[y * GRID_SIZE_X + 1].value = 1;
+		ssbo.cell_state[y * GRID_SIZE_X + GRID_SIZE_X / 2 - 4].value = 1;
 		ssbo.cell_state[y * GRID_SIZE_X + GRID_SIZE_X / 2].value = 1;
-		ssbo.cell_state[y * GRID_SIZE_X + GRID_SIZE_X - 2].value = 1;
+		ssbo.cell_state[y * GRID_SIZE_X + GRID_SIZE_X / 2 + 4].value = 1;
 	}
 
 	// for (int y = 0; y < GRID_SIZE_X; ++y) {
@@ -779,7 +779,7 @@ void Renderer::createStorageBuffer()
 	memcpy(storageBufferWriteLoc, &ssbo, bufferSize);
 }
 
-void Renderer::setCellUpdate(void f(std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&))
+void Renderer::setCellUpdate(void f(grid&))
 {
 	updateFunc = f;
 }
