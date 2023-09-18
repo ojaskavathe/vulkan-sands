@@ -37,4 +37,4 @@ endforeach()
 add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})
 add_dependencies(application shaders)
 
-target_link_libraries(application PRIVATE renderer)
+target_link_libraries(application PRIVATE engine)

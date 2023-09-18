@@ -1,8 +1,8 @@
-project(renderer)
+# project(renderer)
 
 add_library(
     renderer STATIC
-    Engine.cpp includes/Engine.hpp
+    renderer.cpp includes/renderer.hpp
 )
 
 # CMake 3.7 added the FindVulkan module

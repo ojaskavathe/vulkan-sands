@@ -1,8 +1,9 @@
+#include <renderer.hpp>
+#include <utils.hpp>
+
 #include <optional>
 #include <stdint.h>
 #include <tuple>
-#include <utils.hpp>
-#include <Engine.hpp>
 #include <iostream>
 #include <vector>
 #include <stdexcept>
@@ -23,7 +24,7 @@
 #include <debugUtils.hpp>
 #include <wrappers.hpp>
 
-Engine::Engine()
+Renderer::Renderer()
 {
 	initWindow();
 	initVulkan();
@@ -40,13 +41,13 @@ Engine::Engine()
 	// }
 }
 
-void Engine::run()
+void Renderer::run()
 {
 	mainLoop();
 	cleanUp();
 }
 
-void Engine::initWindow()
+void Renderer::initWindow()
 {
 	glfwInit();
 	glfwSetErrorCallback(glfwErrorCallback);
@@ -58,12 +59,12 @@ void Engine::initWindow()
 	glfwSetWindowUserPointer(window, this);
 
 	glfwSetFramebufferSizeCallback(window, [](GLFWwindow* win, int x, int y){
-		Engine* app = reinterpret_cast<Engine*>(glfwGetWindowUserPointer(win));
+		Renderer* app = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(win));
 		app->framebufferResized = true;
 	});
 }
 
-void Engine::initVulkan()
+void Renderer::initVulkan()
 {
 	createInstance();
 	setupDebugMessenger();
@@ -88,19 +89,18 @@ void Engine::initVulkan()
 	createSyncObjects();
 }
 
-void Engine::mainLoop()
+void Renderer::mainLoop()
 {
 	auto start_time = std::chrono::high_resolution_clock::now();
 	while (!glfwWindowShouldClose(window))
 	{
 		auto now = std::chrono::high_resolution_clock::now();
 		auto delta = now - start_time;
-		// delta_time = delta.count();
-		// previous_time = start_time;
-		auto end = now + std::chrono::milliseconds(64);
+		auto end = now + std::chrono::milliseconds(MIN_FRAME_TIME);
 
 		// if (delta >= std::chrono::seconds(1)) {
 		// 	start_time = now;
+		//	std::cout << "Frame Time: ";
 		// }
 
 		updateCells();
@@ -113,7 +113,7 @@ void Engine::mainLoop()
 	device.waitIdle();
 }
 
-void Engine::drawFrame()
+void Renderer::drawFrame()
 {
 	// the * operator on vk::raii::<something> returns vk::<something> & (remember it's a reference)
 	while (device.waitForFences(*inFlightFences[currentFrame], VK_TRUE, UINT32_MAX) == vk::Result::eTimeout)
@@ -155,13 +155,13 @@ void Engine::drawFrame()
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Engine::cleanUp()
+void Renderer::cleanUp()
 {
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
 
-void Engine::recreateSwapchain() {
+void Renderer::recreateSwapchain() {
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(window, &width, &height);
 	while((width == 0 || height == 0)) {
@@ -179,17 +179,17 @@ void Engine::recreateSwapchain() {
 	swapchainImageViews.clear();
 	swapchain.clear();
 
-	Engine::createSwapchain();
-	Engine::createFramebuffers();
+	Renderer::createSwapchain();
+	Renderer::createFramebuffers();
 }
 
-void Engine::createInstance()
+void Renderer::createInstance()
 {
 	vk::ApplicationInfo appInfo{
 		"TriangleTest",						// pApplicationName
 		VK_MAKE_API_VERSION(0, 1, 0, 0),	// applicationVersion
-		"NoEngine",							// pEngineName
-		VK_MAKE_API_VERSION(0, 1, 0, 0),	// engineVersion
+		"NoRenderer",							// pRendererName
+		VK_MAKE_API_VERSION(0, 1, 0, 0),	// RendererVersion
 		VK_API_VERSION_1_0					// apiVersion
 	};
 
@@ -221,7 +221,7 @@ void Engine::createInstance()
 	}
 }
 
-void Engine::pickPhysicalDevice()
+void Renderer::pickPhysicalDevice()
 {
 
 	vk::raii::PhysicalDevices devices(instance);
@@ -260,7 +260,7 @@ void Engine::pickPhysicalDevice()
 	}
 }
 
-void Engine::createLogicalDevice()
+void Renderer::createLogicalDevice()
 {
 	QueueFamilyIndices indices = queryQueueFamilyIndices(physicalDevice);
 
@@ -304,7 +304,7 @@ void Engine::createLogicalDevice()
 	presentQueue = device.getQueue(indices.presentFamily.value(), 0);
 }
 
-void Engine::createSurface()
+void Renderer::createSurface()
 {
 	VkSurfaceKHR _surface;
 	if (glfwCreateWindowSurface(*instance, window, nullptr, &_surface) != VK_SUCCESS)
@@ -314,7 +314,7 @@ void Engine::createSurface()
 	surface = vk::raii::SurfaceKHR(instance, _surface);
 }
 
-void Engine::createSwapchain()
+void Renderer::createSwapchain()
 {
 	SwapchainSupportDetails swapchainSupport = querySwapchainSupport(physicalDevice);
 
@@ -394,7 +394,7 @@ void Engine::createSwapchain()
 
 }
 
-void Engine::createRenderPass()
+void Renderer::createRenderPass()
 {
 	vk::AttachmentDescription colorAttachment{
 		vk::AttachmentDescriptionFlags{},	// flags
@@ -449,7 +449,7 @@ void Engine::createRenderPass()
 	renderPass = vk::raii::RenderPass(device, renderPassInfo);
 }
 
-void Engine::createDescriptorSetLayout() {
+void Renderer::createDescriptorSetLayout() {
 
 	vk::DescriptorSetLayoutBinding uboLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
 	vk::DescriptorSetLayoutBinding ssboLayoutBinding(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eVertex);
@@ -467,7 +467,7 @@ void Engine::createDescriptorSetLayout() {
 	);
 }
 
-void Engine::createGraphicsPipeline()
+void Renderer::createGraphicsPipeline()
 {
 	std::vector<char> vertexShaderCode = readFile(utils::getExecutableDir() / "res/shaders/testv.spv");
 	std::vector<char> fragmentShaderCode = readFile(utils::getExecutableDir() / "res/shaders/testf.spv");
@@ -503,7 +503,7 @@ void Engine::createGraphicsPipeline()
 		vk::PipelineVertexInputStateCreateFlags{},				// flags;
 		1,														// vertexBindingDescriptionCount;
 		&bindingDescription,									// pVertexBindingDescriptions;
-		2,														// vertexAttributeDescriptionCount;
+		attributeDescription.size(),							// vertexAttributeDescriptionCount;
 		attributeDescription.data()								// pVertexAttributeDescriptions;
 	};
 
@@ -617,7 +617,7 @@ void Engine::createGraphicsPipeline()
 	graphicsPipeline = vk::raii::Pipeline(device, nullptr, pipelineInfo);
 }
 
-void Engine::createFramebuffers()
+void Renderer::createFramebuffers()
 {
 	swapchainFramebuffers.reserve(swapchainImages.size());
 
@@ -640,7 +640,7 @@ void Engine::createFramebuffers()
 	}
 }
 
-void Engine::createCommandPool()
+void Renderer::createCommandPool()
 {
 	QueueFamilyIndices queueFamilyIndices = queryQueueFamilyIndices(physicalDevice);
 
@@ -652,7 +652,7 @@ void Engine::createCommandPool()
 	commandPool = vk::raii::CommandPool(device, commandPoolCreateInfo);
 }
 
-[[nodiscard]] auto Engine::createBuffer(
+[[nodiscard]] auto Renderer::createBuffer(
 	vk::DeviceSize _size, 
 	vk::BufferUsageFlags _usage, 
 	vk::MemoryPropertyFlags _propertyFlags
@@ -694,7 +694,7 @@ void Engine::createCommandPool()
 	return std::make_pair( std::move(buffer), std::move(bufferMemory) );
 } 
 
-void Engine::copyBuffer(vk::raii::Buffer& _src, vk::raii::Buffer& _dst, vk::DeviceSize _size)
+void Renderer::copyBuffer(vk::raii::Buffer& _src, vk::raii::Buffer& _dst, vk::DeviceSize _size)
 {
 	vk::CommandBufferAllocateInfo allocInfo(*commandPool, vk::CommandBufferLevel::ePrimary, 1);
 	vk::raii::CommandBuffer copyCommandBuffer = std::move( vk::raii::CommandBuffers(device, allocInfo).front() );
@@ -709,7 +709,7 @@ void Engine::copyBuffer(vk::raii::Buffer& _src, vk::raii::Buffer& _dst, vk::Devi
 	copyCommandBuffer.clear();
 }
 
-void Engine::createVertexBuffer()
+void Renderer::createVertexBuffer()
 {
 	vk::DeviceSize bufferSize = sizeof(Vertex) * vertices.size();
 
@@ -729,7 +729,7 @@ void Engine::createVertexBuffer()
 	copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 }
 
-void Engine::createIndexBuffer()
+void Renderer::createIndexBuffer()
 {
 	vk::DeviceSize bufferSize = sizeof(uint16_t) * indices.size();
 
@@ -749,7 +749,7 @@ void Engine::createIndexBuffer()
 	copyBuffer(stagingBuffer, indexBuffer, bufferSize);
 }
 
-void Engine::createUniformBuffers()
+void Renderer::createUniformBuffers()
 {
 	vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
 
@@ -761,7 +761,7 @@ void Engine::createUniformBuffers()
 	memcpy(uniformBufferMapped, &ubo, bufferSize);
 }
 
-void Engine::createStorageBuffer()
+void Renderer::createStorageBuffer()
 {
 	vk::DeviceSize bufferSize = sizeof(StorageBufferObject);
 
@@ -774,7 +774,7 @@ void Engine::createStorageBuffer()
 	memcpy(storageBufferWriteLoc, &ssbo, bufferSize);
 }
 
-void Engine::updateCells()
+void Renderer::updateCells()
 {
 	vk::DeviceSize bufferSize = sizeof(StorageBufferObject);
 
@@ -814,7 +814,7 @@ void Engine::updateCells()
 	cell_state_in = ssbo.cell_state;
 }
 
-void Engine::createDescriptorPool()
+void Renderer::createDescriptorPool()
 {
 	auto poolSizes = std::vector<vk::DescriptorPoolSize> {
 		vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1),
@@ -829,7 +829,7 @@ void Engine::createDescriptorPool()
 	descriptorPool = vk::raii::DescriptorPool(device, poolInfo);
 }
 
-void Engine::createDescriptorSet()
+void Renderer::createDescriptorSet()
 {
 	auto allocInfo = vk::DescriptorSetAllocateInfo(*descriptorPool, *descriptorSetLayout);
 
@@ -846,7 +846,7 @@ void Engine::createDescriptorSet()
 	device.updateDescriptorSets(descriptorWrite, nullptr);
 }
 
-void Engine::createCommandBuffers()
+void Renderer::createCommandBuffers()
 {
 	commandBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
 	vk::CommandBufferAllocateInfo commandBufferAllocateInfo{
@@ -858,7 +858,7 @@ void Engine::createCommandBuffers()
 	commandBuffers = vk::raii::CommandBuffers(device, commandBufferAllocateInfo);
 }
 
-void Engine::createSyncObjects()
+void Renderer::createSyncObjects()
 {
 	imageAvailableSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
 	renderFinishedSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -877,7 +877,7 @@ void Engine::createSyncObjects()
 	}
 }
 
-void Engine::recordCommandBuffer(vk::raii::CommandBuffer& _commandBuffer, uint32_t _imageIndex)
+void Renderer::recordCommandBuffer(vk::raii::CommandBuffer& _commandBuffer, uint32_t _imageIndex)
 {
 	_commandBuffer.begin( vk::CommandBufferBeginInfo( vk::CommandBufferUsageFlags() ) );
 	
@@ -928,7 +928,7 @@ void Engine::recordCommandBuffer(vk::raii::CommandBuffer& _commandBuffer, uint32
 	_commandBuffer.end();
 }
 
-int Engine::rateDeviceSuitability(const vk::raii::PhysicalDevice _device)
+int Renderer::rateDeviceSuitability(const vk::raii::PhysicalDevice _device)
 {
 	//if all required queue families aren't found, don't use the device
 	if (!queryQueueFamilyIndices(_device).isComplete())
@@ -969,7 +969,7 @@ int Engine::rateDeviceSuitability(const vk::raii::PhysicalDevice _device)
 }
 
 //Returns the indices of all required Queue Families supported by the device.
-Engine::QueueFamilyIndices Engine::queryQueueFamilyIndices(vk::raii::PhysicalDevice _device)
+Renderer::QueueFamilyIndices Renderer::queryQueueFamilyIndices(vk::raii::PhysicalDevice _device)
 {
 	QueueFamilyIndices indices;
 
@@ -1000,7 +1000,7 @@ Engine::QueueFamilyIndices Engine::queryQueueFamilyIndices(vk::raii::PhysicalDev
 }
 
 //Returns the details of the Swapchain provided by the device.
-Engine::SwapchainSupportDetails Engine::querySwapchainSupport(vk::raii::PhysicalDevice _device)
+Renderer::SwapchainSupportDetails Renderer::querySwapchainSupport(vk::raii::PhysicalDevice _device)
 {
 	SwapchainSupportDetails details;
 
@@ -1012,7 +1012,7 @@ Engine::SwapchainSupportDetails Engine::querySwapchainSupport(vk::raii::Physical
 }
 
 //Check if Device Extensions required by the application are supported by the device.
-bool Engine::checkDeviceExtensionSupport(vk::raii::PhysicalDevice _device)
+bool Renderer::checkDeviceExtensionSupport(vk::raii::PhysicalDevice _device)
 {
 	//Get all extensions supported by the device
 	std::vector<vk::ExtensionProperties> availableExtensions = _device.enumerateDeviceExtensionProperties();
@@ -1028,7 +1028,7 @@ bool Engine::checkDeviceExtensionSupport(vk::raii::PhysicalDevice _device)
 }
 
 //Returns the Surface Format to be used by the Swapchain.
-vk::SurfaceFormatKHR Engine::chooseSwapSurfaceFormat(std::vector<vk::SurfaceFormatKHR> _surfaceFormats)
+vk::SurfaceFormatKHR Renderer::chooseSwapSurfaceFormat(std::vector<vk::SurfaceFormatKHR> _surfaceFormats)
 {
 	for (const vk::SurfaceFormatKHR& surfaceFormat : _surfaceFormats)
 	{
@@ -1043,7 +1043,7 @@ vk::SurfaceFormatKHR Engine::chooseSwapSurfaceFormat(std::vector<vk::SurfaceForm
 }
 
 //Returns the way in which the Swapchain present images to the screen (Vsync, Triple Buffering etc.)
-vk::PresentModeKHR Engine::choostSwapPresentMode(std::vector<vk::PresentModeKHR> _presentModes)
+vk::PresentModeKHR Renderer::choostSwapPresentMode(std::vector<vk::PresentModeKHR> _presentModes)
 {
 	for (const vk::PresentModeKHR& presentMode : _presentModes)
 	{
@@ -1058,7 +1058,7 @@ vk::PresentModeKHR Engine::choostSwapPresentMode(std::vector<vk::PresentModeKHR>
 	return vk::PresentModeKHR::eFifo;
 }
 
-vk::Extent2D Engine::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR _capabilities)
+vk::Extent2D Renderer::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR _capabilities)
 {
 	if (_capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 	{
@@ -1081,7 +1081,7 @@ vk::Extent2D Engine::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR _capabili
 }
 
 //Check if Instance Extensions required by the application are supported by the Vulkan Implementation and return them.
-std::vector<const char*> Engine::getRequiredInstanceExtensions()
+std::vector<const char*> Renderer::getRequiredInstanceExtensions()
 {
 	//Gathering extensions required by GLFW
 	uint32_t glfwExtensionCount = 0;
@@ -1135,7 +1135,7 @@ std::vector<const char*> Engine::getRequiredInstanceExtensions()
 	return extensions;
 }
 
-bool Engine::checkValidationLayerSupport()
+bool Renderer::checkValidationLayerSupport()
 {
 	std::vector<vk::LayerProperties> availableLayers;
 	availableLayers = vk::enumerateInstanceLayerProperties();
@@ -1162,7 +1162,7 @@ bool Engine::checkValidationLayerSupport()
 	return true;
 }
 
-void Engine::setupDebugMessenger()
+void Renderer::setupDebugMessenger()
 {
 	if (!enableValidationLayers) 
 		return;
@@ -1173,7 +1173,7 @@ void Engine::setupDebugMessenger()
 	debugUtilsMessenger = vk::raii::DebugUtilsMessengerEXT(instance, createInfo);
 }
 
-std::vector<char> Engine::readFile(const std::filesystem::path& filename) {
+std::vector<char> Renderer::readFile(const std::filesystem::path& filename) {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
 	if (!file.is_open()) {
@@ -1192,7 +1192,7 @@ std::vector<char> Engine::readFile(const std::filesystem::path& filename) {
 	return buffer;
 }
 
-vk::raii::ShaderModule Engine::createShaderModule(std::vector<char>& code)
+vk::raii::ShaderModule Renderer::createShaderModule(std::vector<char>& code)
 {
 	vk::ShaderModuleCreateInfo createInfo {
 		vk::ShaderModuleCreateFlags{},							//flags

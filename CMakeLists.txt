@@ -11,5 +11,6 @@ if(CCACHE)
     set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE}) # Less useful to do it for linking, see edit2
 endif(CCACHE)
 
-add_subdirectory(renderer ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/renderer)
+# add_subdirectory(renderer ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/renderer)
+add_subdirectory(engine)
 add_subdirectory(application ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/application)

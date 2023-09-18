@@ -28,10 +28,12 @@ const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 	const bool enableValidationLayers = false;
 #endif // If in release mode, no validation layers are to be used.
 
-#define GRID_SIZE_X 32
-#define GRID_SIZE_Y 32
+#define GRID_SIZE_X 128
+#define GRID_SIZE_Y 128
 
-class Engine
+#define MIN_FRAME_TIME 16
+
+class Renderer
 {
 private:
 
@@ -49,18 +51,13 @@ private:
 			return bindingDescription;
 		}
 
-		static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescription() {
-			std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions;
+		static std::array<vk::VertexInputAttributeDescription, 1> getAttributeDescription() {
+			std::array<vk::VertexInputAttributeDescription, 1> attributeDescriptions;
 
 			attributeDescriptions[0].binding = 0;
 			attributeDescriptions[0].location = 0;
 			attributeDescriptions[0].offset = offsetof(Vertex, pos);
 			attributeDescriptions[0].format = vk::Format::eR32G32Sfloat;
-
-			attributeDescriptions[1].binding = 0;
-			attributeDescriptions[1].location = 1;
-			attributeDescriptions[1].offset = offsetof(Vertex, color);
-			attributeDescriptions[1].format = vk::Format::eR32G32B32Sfloat;
 
 			return attributeDescriptions;
 		}
@@ -79,10 +76,10 @@ private:
 	};
 
 	const std::vector<Vertex> vertices = {
-		{{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}},
-		{{1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}},
-		{{1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-		{{-1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}}
+		{{-1.0f, -1.0f}},
+		{{1.0f, -1.0f}},
+		{{1.0f, 1.0f}},
+		{{-1.0f, 1.0f}}
 	};
 
 	const std::vector<uint16_t> indices = {
@@ -177,7 +174,7 @@ private:
 	};
 
 public:
-	Engine();
+	Renderer();
 	void run();
 
 private:
