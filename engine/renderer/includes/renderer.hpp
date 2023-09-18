@@ -172,12 +172,13 @@ private:
 		std::vector<vk::SurfaceFormatKHR> formats;
 		std::vector<vk::PresentModeKHR> presentModes;
 	};
+	void (*updateFunc) (std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&) = nullptr;
 
 public:
 	Renderer();
 	void run();
 
-	static void (*updateFunc) (std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&);
+	void setCellUpdate(void(std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&));
 
 private:
 	void initWindow();

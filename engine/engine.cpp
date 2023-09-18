@@ -43,7 +43,8 @@ namespace Engine {
     void run()
     {
         try {
-            Renderer::updateFunc = f;
+            // r.updateFunc = f;
+            r.setCellUpdate(f);
             r.run();
         } catch (const std::exception& e) {
             std::cerr << "[Renderer] except: " << e.what() << std::endl;

@@ -50,7 +50,7 @@ void Renderer::run()
 }
 
 // ???????????????????????????????????
-void (*Renderer::updateFunc) (std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&) = nullptr;
+// void (*Renderer::updateFunc) (std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&) = nullptr;
 
 void Renderer::initWindow()
 {
@@ -777,6 +777,11 @@ void Renderer::createStorageBuffer()
 	storageBufferWriteLoc = storageBufferMemory.mapMemory(0, bufferSize);
 
 	memcpy(storageBufferWriteLoc, &ssbo, bufferSize);
+}
+
+void Renderer::setCellUpdate(void f(std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&))
+{
+	updateFunc = f;
 }
 
 void Renderer::updateCells()
