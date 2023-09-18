@@ -33,6 +33,14 @@ const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 #define MIN_FRAME_TIME 16
 
+struct Cell {
+	alignas(16) uint32_t value;
+};
+
+struct StorageBufferObject {
+	std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y> cell_state;
+};
+
 class Renderer
 {
 private:
@@ -63,16 +71,8 @@ private:
 		}
 	};
 
-	struct Cell {
-		alignas(16) uint32_t value;
-	};
-
 	struct UniformBufferObject {
 		glm::vec2 grid_size;
-	};
-
-	struct StorageBufferObject {
-		std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y> cell_state;
 	};
 
 	const std::vector<Vertex> vertices = {
@@ -176,6 +176,8 @@ private:
 public:
 	Renderer();
 	void run();
+
+	static void (*updateFunc) (std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&);
 
 private:
 	void initWindow();

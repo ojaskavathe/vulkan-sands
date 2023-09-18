@@ -31,7 +31,9 @@ Renderer::Renderer()
 
 	// initial cell state pls move this somewhere else ffs
 	for (int y = 0; y < GRID_SIZE_Y; ++y) {
+		ssbo.cell_state[y * GRID_SIZE_X + 1].value = 1;
 		ssbo.cell_state[y * GRID_SIZE_X + GRID_SIZE_X / 2].value = 1;
+		ssbo.cell_state[y * GRID_SIZE_X + GRID_SIZE_X - 2].value = 1;
 	}
 
 	// for (int y = 0; y < GRID_SIZE_X; ++y) {
@@ -46,6 +48,9 @@ void Renderer::run()
 	mainLoop();
 	cleanUp();
 }
+
+// ???????????????????????????????????
+void (*Renderer::updateFunc) (std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&) = nullptr;
 
 void Renderer::initWindow()
 {
@@ -778,37 +783,7 @@ void Renderer::updateCells()
 {
 	vk::DeviceSize bufferSize = sizeof(StorageBufferObject);
 
-	for(uint32_t y = 0; y < GRID_SIZE_Y; ++y) {
-		for(uint32_t x = 0; x < GRID_SIZE_X; ++x) {
-			
-			if (y == 0) {
-				continue;
-			}
-
-			if (ssbo.cell_state[y * GRID_SIZE_X + x].value == 1) {
-
-				// cell below is empty
-				if (ssbo.cell_state[(y - 1) * GRID_SIZE_X + x].value == 0) {
-					ssbo.cell_state[(y - 1) * GRID_SIZE_X + x].value = 1;
-					ssbo.cell_state[y * GRID_SIZE_X + x].value = 0;
-				}
-				else if (x != 0 && x != GRID_SIZE_X - 1) {
-					// cell below is filled
-					if (ssbo.cell_state[(y - 1) * GRID_SIZE_X + x - 1].value == 0) {
-						ssbo.cell_state[(y - 1) * GRID_SIZE_X + x - 1].value = 1;
-						ssbo.cell_state[y * GRID_SIZE_X + x].value = 0;
-					}
-					// cell to the left is filled
-					else if (ssbo.cell_state[(y - 1) * GRID_SIZE_X + x + 1].value == 0) {
-						ssbo.cell_state[(y - 1) * GRID_SIZE_X + x + 1].value = 1;
-						ssbo.cell_state[y * GRID_SIZE_X + x].value = 0;
-					}
-
-				}
-			}
-
-		}
-	}
+	updateFunc(ssbo.cell_state);
 	
 	memcpy(storageBufferWriteLoc, &ssbo, bufferSize);
 	cell_state_in = ssbo.cell_state;
