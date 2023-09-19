@@ -59,6 +59,7 @@ out/
 
 # Visual Studio
 .vs/
+CMakeSettings.json
 
 # clangd
 .cache/

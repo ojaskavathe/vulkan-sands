@@ -46,7 +46,6 @@ Renderer::Renderer()
 void Renderer::run()
 {
 	mainLoop();
-	cleanUp();
 }
 
 // ???????????????????????????????????
@@ -96,11 +95,11 @@ void Renderer::initVulkan()
 
 void Renderer::mainLoop()
 {
-	auto start_time = std::chrono::high_resolution_clock::now();
+	//auto start_time = std::chrono::high_resolution_clock::now();
 	while (!glfwWindowShouldClose(window))
 	{
 		auto now = std::chrono::high_resolution_clock::now();
-		auto delta = now - start_time;
+		//auto delta = now - start_time;
 		auto end = now + std::chrono::milliseconds(MIN_FRAME_TIME);
 
 		// if (delta >= std::chrono::seconds(1)) {
@@ -160,7 +159,7 @@ void Renderer::drawFrame()
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::cleanUp()
+Renderer::~Renderer()
 {
 	glfwDestroyWindow(window);
 	glfwTerminate();
@@ -779,9 +778,9 @@ void Renderer::createStorageBuffer()
 	memcpy(storageBufferWriteLoc, &ssbo, bufferSize);
 }
 
-void Renderer::setCellUpdate(void f(grid&))
+void Renderer::setCellUpdate(void onUpdate(grid&))
 {
-	updateFunc = f;
+	updateFunc = onUpdate;
 }
 
 void Renderer::updateCells()

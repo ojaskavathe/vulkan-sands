@@ -5,12 +5,11 @@
 #include <iostream>
 #include <stdexcept>
 
-namespace Engine {    
-    Renderer r;
-
+namespace Engine {
     void run()
     {
         try {
+            Renderer r;
             r.setCellUpdate(sim::updateCell);
             r.run();
         } catch (const std::exception& e) {

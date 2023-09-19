@@ -25,7 +25,7 @@ void main() {
     // cell_pos *= ssbo.cell_state[i].value;
 
     vec2 grid_pos = vec2(inPosition.x + 1, inPosition.y - 1) / ubo.grid_size;
-    grid_pos = vec2(grid_pos.x - 1, grid_pos.y + 1);
+    grid_pos = vec2(grid_pos.x - 1, grid_pos.y +1);
     grid_pos = vec2(grid_pos.x + cell_pos.x, grid_pos.y - cell_pos.y);
 
     gl_Position = vec4(grid_pos, 0.0, 1.0);

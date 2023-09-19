@@ -31,7 +31,7 @@ target_link_libraries(renderer
     PRIVATE glm
 )
 
-target_compile_options(renderer PUBLIC -fexceptions)
+# target_compile_options(renderer PUBLIC -fexceptions)
 
 target_include_directories(renderer
     PUBLIC ${Vulkan_INCLUDE_DIR}

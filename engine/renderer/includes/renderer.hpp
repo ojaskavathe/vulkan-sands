@@ -20,15 +20,17 @@
 
 #include <config.hpp>
 
-#ifdef _DEBUG
-	const bool enableValidationLayers = true;
-#else
-	const bool enableValidationLayers = false;
-#endif // If in release mode, no validation layers are to be used.
 
 class Renderer
 {
 private:
+
+#ifdef _DEBUG
+	const bool enableValidationLayers = true;
+#else
+	// If in release mode, no validation layers are to be used.
+	const bool enableValidationLayers = false;
+#endif
 
 	struct Vertex {
 		glm::vec2 pos;
@@ -64,35 +66,33 @@ private:
 		grid cell_state;
 	};
 
-	const std::vector<Vertex> vertices = {
+	const std::vector<Vertex> vertices{
 		{{-1.0f, -1.0f}},
 		{{1.0f, -1.0f}},
 		{{1.0f, 1.0f}},
 		{{-1.0f, 1.0f}}
 	};
 
-	const std::vector<uint16_t> indices = {
+	const std::vector<uint16_t> indices{
 		0, 1, 2, 2, 3, 0
 	};
 
-	const UniformBufferObject ubo = { glm::vec2(GRID_SIZE_X, GRID_SIZE_Y) };
+	const UniformBufferObject ubo{ glm::vec2(GRID_SIZE_X, GRID_SIZE_Y) };
 
-	std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y> cell_state_in = {};
-	StorageBufferObject ssbo = {cell_state_in};
+	std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y> cell_state_in{};
+	StorageBufferObject ssbo{cell_state_in};
 
 	GLFWwindow* window;
 
-	float delta_time = 0.0f;
-
 	vk::raii::Context context;
 	
-	vk::raii::Instance instance = nullptr;
-	vk::raii::PhysicalDevice physicalDevice = nullptr;
-	vk::raii::Device device = nullptr;
+	vk::raii::Instance instance{nullptr};
+	vk::raii::PhysicalDevice physicalDevice{nullptr};
+	vk::raii::Device device{nullptr};
 
-	vk::raii::SurfaceKHR surface = nullptr;
+	vk::raii::SurfaceKHR surface{nullptr};
 
-	vk::raii::SwapchainKHR swapchain = nullptr;
+	vk::raii::SwapchainKHR swapchain{nullptr};
 	std::vector<vk::Image> swapchainImages;
 	std::vector<vk::raii::ImageView> swapchainImageViews;
 	vk::Format swapchainImageFormat;
@@ -100,48 +100,48 @@ private:
 
 	std::vector<vk::raii::Framebuffer> swapchainFramebuffers;
 
-	vk::raii::Queue graphicsQueue = nullptr;
-	vk::raii::Queue presentQueue = nullptr;
+	vk::raii::Queue graphicsQueue{nullptr};
+	vk::raii::Queue presentQueue{nullptr};
 
-	vk::raii::RenderPass renderPass = nullptr;
+	vk::raii::RenderPass renderPass{nullptr};
 
-	vk::raii::DescriptorSetLayout descriptorSetLayout = nullptr;
-	vk::raii::PipelineLayout pipelineLayout = nullptr;
-	vk::raii::Pipeline graphicsPipeline = nullptr;
+	vk::raii::DescriptorSetLayout descriptorSetLayout{nullptr};
+	vk::raii::PipelineLayout pipelineLayout{nullptr};
+	vk::raii::Pipeline graphicsPipeline{nullptr};
 
-	vk::raii::CommandPool commandPool = nullptr;
-	vk::raii::CommandBuffers commandBuffers = nullptr;
+	vk::raii::CommandPool commandPool{nullptr};
+	vk::raii::CommandBuffers commandBuffers{nullptr};
 
 	uint32_t currentFrame = 0;
 	std::vector<vk::raii::Semaphore> imageAvailableSemaphores;
 	std::vector<vk::raii::Semaphore> renderFinishedSemaphores;
 	std::vector<vk::raii::Fence> inFlightFences;
 
-	vk::raii::DebugUtilsMessengerEXT debugUtilsMessenger = nullptr;
+	vk::raii::DebugUtilsMessengerEXT debugUtilsMessenger{nullptr};
 
 	bool framebufferResized = false;
 
-	vk::raii::Buffer vertexBuffer = nullptr;
-	vk::raii::DeviceMemory vertexBufferMemory = nullptr;
+	vk::raii::Buffer vertexBuffer{nullptr};
+	vk::raii::DeviceMemory vertexBufferMemory{nullptr};
 
-	vk::raii::Buffer indexBuffer = nullptr;
-	vk::raii::DeviceMemory indexBufferMemory = nullptr;
+	vk::raii::Buffer indexBuffer{nullptr};
+	vk::raii::DeviceMemory indexBufferMemory{nullptr};
 
-	vk::raii::Buffer uniformBuffer = nullptr;
-	vk::raii::DeviceMemory uniformBuffersMemory = nullptr;
+	vk::raii::Buffer uniformBuffer{nullptr};
+	vk::raii::DeviceMemory uniformBuffersMemory{nullptr};
 
-	vk::raii::Buffer storageBuffer = nullptr;
-	vk::raii::DeviceMemory storageBufferMemory = nullptr;
-	void* storageBufferWriteLoc = nullptr;
+	vk::raii::Buffer storageBuffer{nullptr};
+	vk::raii::DeviceMemory storageBufferMemory{nullptr};
+	void* storageBufferWriteLoc{nullptr};
 
-	vk::raii::DescriptorPool descriptorPool = nullptr;
-	vk::raii::DescriptorSet descriptorSet = nullptr;
+	vk::raii::DescriptorPool descriptorPool{nullptr};
+	vk::raii::DescriptorSet descriptorSet{nullptr};
 
-	const std::vector<const char*> ValidationLayers = {
+	const std::vector<const char*> ValidationLayers{
 		"VK_LAYER_KHRONOS_validation"
 	};
 
-	const std::vector<const char*> DeviceExtensions = {
+	const std::vector<const char*> DeviceExtensions{
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
@@ -161,19 +161,19 @@ private:
 		std::vector<vk::SurfaceFormatKHR> formats;
 		std::vector<vk::PresentModeKHR> presentModes;
 	};
-	void (*updateFunc) (std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&) = nullptr;
+	void (*updateFunc) (std::array<Cell, GRID_SIZE_X * GRID_SIZE_Y>&){nullptr};
 
 public:
 	Renderer();
+	~Renderer();
 	void run();
 
-	void setCellUpdate(void(grid&));
+	void setCellUpdate(void onUpdate(grid&));
 
 private:
 	void initWindow();
 	void initVulkan();
 	void mainLoop();
-	void cleanUp();
 
 	void recreateSwapchain();
 
