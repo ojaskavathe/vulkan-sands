@@ -1,6 +1,11 @@
 project(application)
 add_executable(application Application.cpp)
 
+if (NOT Vulkan_GLSLC_EXECUTABLE)
+    message("Error: Couldn't Locate the Vulkan SDK for glslc!")
+    return()
+endif()
+
 set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/res/shaders)
 set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/res/shaders)
 
@@ -24,7 +29,6 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BINARY_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_FINAL_DIR}
 )
-    
 
 foreach(SHADER IN LISTS SHADERS)
     get_filename_component(FILENAME ${SHADER} NAME_WE)
@@ -34,7 +38,7 @@ foreach(SHADER IN LISTS SHADERS)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${SHADER_BINARY_DIR}/${FILENAME}.spv
             ${SHADER_FINAL_DIR}/${FILENAME}.spv
-        DEPENDS ${SHADER}
+        DEPENDS ${SHADER} ${SHADER_BINARY_DIR}
         COMMENT "[glslc]: Compiling ${FILENAME}")
     list(APPEND SPV_SHADERS ${SHADER_BINARY_DIR}/${FILENAME}.spv)
 endforeach()
