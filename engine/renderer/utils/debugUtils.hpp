@@ -4,13 +4,6 @@
 #include <iostream>
 #include <vulkan/vulkan_raii.hpp>
 
-//Called whenever a GLFW error occurs.
-inline void glfwErrorCallback(int code, const char* description)
-{
-	std::cerr << "[GLFW]: " << code << ": " << description;
-	std::cerr << std::endl;
-}
-
 //Called whenever a Vulkan throws an error/warning.
 inline VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

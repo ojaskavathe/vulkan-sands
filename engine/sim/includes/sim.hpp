@@ -2,6 +2,11 @@
 
 #include <config.hpp>
 
-namespace sim {
-    void updateCell(grid& cell_state);
-}
+class Sim {
+public:
+  Sim(tGrid& m_WorldMatrix);
+  void updateCell();
+
+private:
+  tGrid& m_WorldMatrix;
+};

@@ -25,10 +25,10 @@ inline vk::Result QueuePresentWrapper(vk::raii::Instance &instance,
                                       const vk::PresentInfoKHR &present_info) {
 
   // throws Poco::NotFoundException, apparently a driver issue
-    vk::Result result =
-        static_cast<vk::Result>(queue.getDispatcher()->vkQueuePresentKHR(
-            static_cast<VkQueue>(*queue),
-            reinterpret_cast<const VkPresentInfoKHR *>(&present_info)));
+  vk::Result result =
+      static_cast<vk::Result>(queue.getDispatcher()->vkQueuePresentKHR(
+          static_cast<VkQueue>(*queue),
+          reinterpret_cast<const VkPresentInfoKHR *>(&present_info)));
 
   return static_cast<vk::Result>(result);
 }

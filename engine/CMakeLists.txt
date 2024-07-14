@@ -13,5 +13,5 @@ target_link_libraries(engine PUBLIC sim)
 
 target_include_directories(engine
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/includes
-    PUBLIC ${CMAKE_SOURCE_DIR}/engine/config
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/elements
 )

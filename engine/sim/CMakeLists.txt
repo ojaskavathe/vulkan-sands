@@ -5,5 +5,5 @@ add_library(
 
 target_include_directories(sim 
     PUBLIC includes
-    PUBLIC ${CMAKE_SOURCE_DIR}/engine/config
+    PUBLIC ${CMAKE_SOURCE_DIR}/engine/elements
 )

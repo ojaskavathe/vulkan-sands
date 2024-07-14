@@ -63,3 +63,6 @@ CMakeSettings.json
 
 # clangd
 .cache/
+
+# vim
+Session.vim

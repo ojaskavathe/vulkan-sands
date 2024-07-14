@@ -1,8 +1,6 @@
 #include <engine.hpp>
 
-int main()
-{
-	Engine::run();
-
-	return 0;
+int main() {
+  Engine e;
+  e.Run();
 }

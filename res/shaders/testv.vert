@@ -17,7 +17,6 @@ layout(std140, binding = 1) readonly buffer StorageBufferObject {
 } ssbo;
 
 void main() {
-
     int i = gl_InstanceIndex;
     vec2 cell_pos = vec2(i % uint(ubo.grid_size.x), floor(i / uint(ubo.grid_size.y)));
 
