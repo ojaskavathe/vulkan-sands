@@ -37,7 +37,7 @@ target_include_directories(renderer
     PRIVATE ${Vulkan_INCLUDE_DIR}
     PUBLIC ${CMAKE_SOURCE_DIR}/external/glfw/include
     PUBLIC ${CMAKE_SOURCE_DIR}/external/glm
-    PUBLIC ${CMAKE_SOURCE_DIR}/engine/elements
+    PUBLIC ${CMAKE_SOURCE_DIR}/engine/cell
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/includes
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/utils
 )

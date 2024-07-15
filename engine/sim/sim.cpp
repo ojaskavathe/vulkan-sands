@@ -1,41 +1,50 @@
+#include <config.hpp>
+#include <cstdint>
 #include <sim.hpp>
 
-Sim::Sim(tGrid& worldMatrix): m_WorldMatrix(worldMatrix) {
+Sim::Sim(tGrid &worldMatrix) : m_WorldMatrix(worldMatrix) {
   // initial state
-  for (int y = 0; y < GRID_SIZE_Y; ++y) {
-    m_WorldMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2 - 4].value = 1;
-    m_WorldMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2].value = 1;
-    m_WorldMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2 + 4].value = 1;
+
+  for (uint32_t y = 0; y < GRID_SIZE_Y; ++y) {
+    for (uint32_t x = 0; x < GRID_SIZE_X; ++x) {
+      m_ElementsMatrix[y * GRID_SIZE_X + x] = {x, y, ElementType::Air};
+    }
+  }
+
+  for (int y = 2; y < GRID_SIZE_Y/2; ++y) {
+    m_ElementsMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2 - 4].m_Value = ElementType::Sand;
+    m_ElementsMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2].m_Value = ElementType::Sand;
+    m_ElementsMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2 + 4].m_Value = ElementType::Sand;
   }
 }
 
-void Sim::updateCell() {
-  for (uint32_t y = 0; y < GRID_SIZE_Y; ++y) {
-    for (uint32_t x = 0; x < GRID_SIZE_X; ++x) {
+void Sim::set(uint32_t x, uint32_t y, Element &element) {
+  m_ElementsMatrix[y * GRID_SIZE_X + x] = element;
+  m_ElementsMatrix[y * GRID_SIZE_X + x].m_GridX = x;
+  m_ElementsMatrix[y * GRID_SIZE_X + x].m_GridY = y;
 
-      if (y == 0) {
-        continue;
-      }
+  m_WorldMatrix[y * GRID_SIZE_X + x].value = static_cast<uint32_t>(element.m_Value);
+}
 
-      if (m_WorldMatrix[y * GRID_SIZE_X + x].value == 1) {
-
-        // cell below is empty
-        if (m_WorldMatrix[(y - 1) * GRID_SIZE_X + x].value == 0) {
-          m_WorldMatrix[(y - 1) * GRID_SIZE_X + x].value = 1;
-          m_WorldMatrix[y * GRID_SIZE_X + x].value = 0;
-        } else if (x != 0 && x != GRID_SIZE_X - 1) {
-          // cell below is filled
-          if (m_WorldMatrix[(y - 1) * GRID_SIZE_X + x - 1].value == 0) {
-            m_WorldMatrix[(y - 1) * GRID_SIZE_X + x - 1].value = 1;
-            m_WorldMatrix[y * GRID_SIZE_X + x].value = 0;
-          }
-          // cell to the left is filled
-          else if (m_WorldMatrix[(y - 1) * GRID_SIZE_X + x + 1].value == 0) {
-            m_WorldMatrix[(y - 1) * GRID_SIZE_X + x + 1].value = 1;
-            m_WorldMatrix[y * GRID_SIZE_X + x].value = 0;
-          }
-        }
-      }
-    }
+std::optional<Element> Sim::get(uint32_t x, uint32_t y) {
+  if (insideBounds(x, y)) {
+    return m_ElementsMatrix[y * GRID_SIZE_X + x];
   }
+  return std::nullopt;
+}
+
+bool Sim::insideBounds(uint32_t x, uint32_t y) {
+  return x >= 0 && y >= 0 && x < GRID_SIZE_X && y < GRID_SIZE_Y;
+}
+
+void Sim::updateCell() {
+  for (Element &element : m_ElementsMatrix) {
+    if (element.m_Value != ElementType::Air)
+      element.step(*this);
+  }
+  // for (uint32_t y = 0; y < GRID_SIZE_Y; ++y) {
+  //   for (uint32_t x = 0; x < GRID_SIZE_X; ++x) {
+  //     m_WorldMatrix[y * GRID_SIZE_X + x].value = m_ElementsMatrix[y * GRID_SIZE_X + x].m_Value;
+  //   }
+  // }
 }

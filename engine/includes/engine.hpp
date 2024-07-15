@@ -18,4 +18,6 @@ private:
   Renderer m_Renderer;
   tGrid m_WorldMatrix;
   Sim m_Sim;
+
+  bool flag;
 };
