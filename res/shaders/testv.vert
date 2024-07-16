@@ -29,6 +29,17 @@ void main() {
 
     gl_Position = vec4(grid_pos, 0.0, 1.0);
 
-    vec3 color = vec3(ssbo.cell_state[i].value);
-    outFragColor = vec3(color);
+    vec3 color;
+    switch (ssbo.cell_state[i].value) {
+        case 0:
+            color = vec3(0);
+            break;
+        case 1:
+            color = vec3(203, 189, 147) / 255;
+            break;
+        case 2:
+            color = vec3(48, 92, 222) / 255;
+            break;
+    }
+    outFragColor = color;
 }

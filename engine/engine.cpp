@@ -39,7 +39,7 @@ void Engine::Run() {
       }
     }
 
-    std::this_thread::sleep_until(end);
+    // std::this_thread::sleep_until(end);
   }
 }
 

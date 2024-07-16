@@ -1,5 +1,6 @@
 #include <config.hpp>
 #include <cstdint>
+#include <random>
 #include <sim.hpp>
 
 Sim::Sim(tGrid &worldMatrix) : m_WorldMatrix(worldMatrix) {
@@ -11,13 +12,13 @@ Sim::Sim(tGrid &worldMatrix) : m_WorldMatrix(worldMatrix) {
     }
   }
 
-  for (int y = 2; y < GRID_SIZE_Y / 2; ++y) {
-    m_ElementsMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2 - 4].m_Value =
-        ElementType::Sand;
-    m_ElementsMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2].m_Value =
-        ElementType::Sand;
-    m_ElementsMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2 + 4].m_Value =
-        ElementType::Sand;
+  for (int y = 2; y < GRID_SIZE_Y; ++y) {
+    // m_ElementsMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2 - 4].m_Value =
+    //     ElementType::Sand;
+    // m_ElementsMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2].m_Value =
+    // ElementType::Sand;
+    // m_ElementsMatrix[y * GRID_SIZE_X + GRID_SIZE_X / 2 + 4].m_Value =
+    //     ElementType::Sand;
   }
 }
 
@@ -26,6 +27,7 @@ void Sim::set(uint32_t x, uint32_t y, Element &element) {
     m_ElementsMatrix[y * GRID_SIZE_X + x] = element;
     m_ElementsMatrix[y * GRID_SIZE_X + x].m_GridX = x;
     m_ElementsMatrix[y * GRID_SIZE_X + x].m_GridY = y;
+    m_ElementsMatrix[y * GRID_SIZE_X + x].m_HasBeenDisplaced = true;
 
     m_WorldMatrix[y * GRID_SIZE_X + x].value =
         static_cast<uint32_t>(element.m_Value);
@@ -36,8 +38,7 @@ void Sim::set(uint32_t x, uint32_t y, ElementType type) {
   if (insideBounds(x, y)) {
     m_ElementsMatrix[y * GRID_SIZE_X + x].m_Value = type;
 
-    m_WorldMatrix[y * GRID_SIZE_X + x].value =
-        static_cast<uint32_t>(type);
+    m_WorldMatrix[y * GRID_SIZE_X + x].value = static_cast<uint32_t>(type);
   }
 }
 
@@ -58,14 +59,18 @@ void Sim::mouse(double xpos, double ypos, bool sink) {
 
   for (int i = -3; i < 4; i++) {
     for (int j = -3; j < 4; j++) {
-      set(x+i, y+j, sink ? ElementType::Air : ElementType::Sand);
+      set(x + i, y + j, sink ? ElementType::Water : ElementType::Sand);
     }
   }
 }
 
 void Sim::step() {
+  std::uniform_int_distribution<std::mt19937::result_type> genBool(0, 1);
+
   for (Element &element : m_ElementsMatrix) {
     if (element.m_Value != ElementType::Air)
-      element.step(*this);
+      element.step(*this, genBool);
+
+    element.m_HasBeenDisplaced = false;
   }
 }
